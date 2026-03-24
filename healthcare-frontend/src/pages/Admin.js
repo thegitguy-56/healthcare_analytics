@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import axios from "axios"
 import {
 Box,
@@ -52,11 +52,7 @@ role: "doctor",
 
 const API = process.env.REACT_APP_API_URL
 
-useEffect(() => {
-fetchAdminData()
-}, [])
-
-const fetchAdminData = async () => {
+const fetchAdminData = useCallback(async () => {
   try {
     setErrorMessage("")
     const usersRes = await axios.get(`${API}/admin/users`);
@@ -70,7 +66,11 @@ const fetchAdminData = async () => {
   } finally {
     setLoading(false);
   }
-};
+}, [API]);
+
+useEffect(() => {
+fetchAdminData()
+}, [fetchAdminData])
 
 const handleAddUser = async () => {
   if (!newUser.username || !newUser.password) {
