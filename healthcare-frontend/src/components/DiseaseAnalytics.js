@@ -17,7 +17,7 @@ import {
   Filler
 } from "chart.js";
 
-const API_URL = process.env.REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 ChartJS.register(
   CategoryScale,
@@ -71,3 +71,4 @@ return(
 }
 
 export default DiseaseAnalytics
+

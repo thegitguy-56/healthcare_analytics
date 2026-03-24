@@ -50,6 +50,19 @@ const getTableColumns = async (tableName) => {
   return new Set(rows.map((r) => r.COLUMN_NAME))
 }
 
+const resolveTableName = async (tableName) => {
+  const rows = await query(
+    `
+      SELECT TABLE_NAME
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = ? AND LOWER(TABLE_NAME) = LOWER(?)
+      LIMIT 1
+    `,
+    [dbConfig.database, tableName]
+  )
+  return rows[0]?.TABLE_NAME || tableName
+}
+
 const getFirstExistingColumn = (columns, candidates) =>
   candidates.find((name) => columns.has(name)) || null
 
@@ -465,9 +478,10 @@ app.post("/login", async (req, res) => {
   const { username, password } = req.body
 
   try {
+    const usersTable = await resolveTableName("Users")
     const result = await query(
       `
-        SELECT role FROM Users
+        SELECT role FROM ${usersTable}
         WHERE username = ? AND password = ?
       `,
       [username, password]
@@ -504,6 +518,7 @@ app.get("/logs", async (req, res) => {
 app.get("/admin/users", async (req, res) => {
   try {
     const columns = await getTableColumns("Users")
+    const usersTable = await resolveTableName("Users")
 
     const idColumn = getFirstExistingColumn(columns, ["user_id", "id", "uid", "username"])
     const usernameColumn = getFirstExistingColumn(columns, ["username", "name"])
@@ -520,7 +535,7 @@ app.get("/admin/users", async (req, res) => {
         ${roleColumn ? roleColumn : "NULL"} AS role,
         ${statusColumn ? statusColumn : "'Active'"} AS status,
         ${createdColumn ? createdColumn : "NOW()"} AS created_at
-      FROM Users
+      FROM ${usersTable}
       ORDER BY created_at DESC
     `
 
@@ -540,6 +555,7 @@ app.post("/admin/users", async (req, res) => {
 
   try {
     const columns = await getTableColumns("Users")
+    const usersTable = await resolveTableName("Users")
     const payload = {}
 
     const normalizedRole = String(role || "").trim().toLowerCase()
@@ -561,7 +577,7 @@ app.post("/admin/users", async (req, res) => {
 
     const insertColumns = Object.keys(payload)
     const placeholders = insertColumns.map(() => "?").join(", ")
-    const sql = `INSERT INTO Users (${insertColumns.join(", ")}) VALUES (${placeholders})`
+    const sql = `INSERT INTO ${usersTable} (${insertColumns.join(", ")}) VALUES (${placeholders})`
     const result = await query(sql, insertColumns.map((k) => payload[k]))
 
     res.status(201).json({ message: "User added successfully", userId: result.insertId })
@@ -573,15 +589,16 @@ app.post("/admin/users", async (req, res) => {
 app.delete("/admin/users/:id", async (req, res) => {
   try {
     const columns = await getTableColumns("Users")
+    const usersTable = await resolveTableName("Users")
     const idColumn = getFirstExistingColumn(columns, ["user_id", "id", "uid"])
 
     if (idColumn) {
-      await query(`DELETE FROM Users WHERE ${idColumn} = ?`, [req.params.id])
+      await query(`DELETE FROM ${usersTable} WHERE ${idColumn} = ?`, [req.params.id])
       return res.json({ message: "User deleted" })
     }
 
     if (columns.has("username")) {
-      await query("DELETE FROM Users WHERE username = ?", [req.params.id])
+      await query(`DELETE FROM ${usersTable} WHERE username = ?`, [req.params.id])
       return res.json({ message: "User deleted" })
     }
 
@@ -618,6 +635,8 @@ app.get("/admin/access-logs", async (req, res) => {
   }
 })
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000")
+const PORT = process.env.PORT ? Number(process.env.PORT) : 5000
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
 })

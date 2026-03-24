@@ -26,7 +26,7 @@ import PersonIcon from "@mui/icons-material/Person"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import "./Patients.css"
 
-const API_URL = process.env.REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 function Patients() {
   const [patients, setPatients] = useState([])
@@ -489,3 +489,5 @@ function Patients() {
 }
 
 export default Patients
+
+

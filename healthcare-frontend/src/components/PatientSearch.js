@@ -2,7 +2,7 @@ import React,{useState} from "react"
 import axios from "axios"
 import { TextField, List, ListItemButton } from "@mui/material"
 
-const API_URL = process.env.REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 function PatientSearch(){
 const [query,setQuery] = useState("")
@@ -55,3 +55,4 @@ onChange={e=>search(e.target.value)}
 }
 
 export default PatientSearch
+

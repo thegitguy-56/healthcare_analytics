@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from "react"
 import axios from "axios"
 
-const API_URL = process.env.REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 function AccessLogs(){
 const [logs,setLogs] = useState([])
@@ -52,3 +52,4 @@ return(
 }
 
 export default AccessLogs
+

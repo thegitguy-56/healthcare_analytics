@@ -14,7 +14,7 @@ import MedicalServicesIcon from "@mui/icons-material/MedicalServices"
 import DescriptionIcon from "@mui/icons-material/Description"
 import "./DashboardCards.css"
 
-const API_URL = process.env.REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 function DashboardCards() {
   const [stats, setStats] = useState({
@@ -188,3 +188,5 @@ function DashboardCards() {
 }
 
 export default DashboardCards
+
+

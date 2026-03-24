@@ -30,7 +30,7 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"
 import EventIcon from "@mui/icons-material/Event"
 import "./PatientProfile.css"
 
-const API_URL = process.env.REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 function PatientProfile() {
   const { id } = useParams()
@@ -382,3 +382,5 @@ function PatientProfile() {
 }
 
 export default PatientProfile
+
+

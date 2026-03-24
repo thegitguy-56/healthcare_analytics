@@ -50,7 +50,7 @@ password: "",
 role: "doctor",
 })
 
-const API = process.env.REACT_APP_API_URL
+const API = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 const fetchAdminData = useCallback(async () => {
   try {
@@ -374,3 +374,5 @@ return (
 }
 
 export default Admin
+
+

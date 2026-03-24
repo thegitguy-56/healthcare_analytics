@@ -27,7 +27,7 @@ import { Bar, Line, Pie, Radar } from "react-chartjs-2"
 import AnalyticsIcon from "@mui/icons-material/Analytics"
 import "./Analytics.css"
 
-const API_URL = process.env.REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 ChartJS.register(
   CategoryScale,
@@ -463,3 +463,5 @@ function Analytics() {
 }
 
 export default Analytics
+
+

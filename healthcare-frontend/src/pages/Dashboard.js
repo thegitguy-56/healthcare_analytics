@@ -25,7 +25,7 @@ import DashboardCards from "../components/DashboardCards"
 import TrendingUpIcon from "@mui/icons-material/TrendingUp"
 import "./Dashboard.css"
 
-const API_URL = process.env.REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "")
 
 ChartJS.register(
   CategoryScale,
@@ -309,3 +309,5 @@ function Dashboard() {
 }
 
 export default Dashboard
+
+
