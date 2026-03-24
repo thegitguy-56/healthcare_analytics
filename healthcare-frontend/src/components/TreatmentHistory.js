@@ -1,14 +1,15 @@
 import React,{useState} from "react"
 import axios from "axios"
 
-function TreatmentHistory(){
+const API_URL = process.env.REACT_APP_API_URL
 
+function TreatmentHistory(){
 const [patientId,setPatientId] = useState("")
 const [treatments,setTreatments] = useState([])
 
 const fetchTreatments = ()=>{
 
-axios.get(`http://localhost:5000/treatments/${patientId}`)
+axios.get(`${API_URL}/treatments/${patientId}`)
 .then(res=>{
 setTreatments(res.data)
 })

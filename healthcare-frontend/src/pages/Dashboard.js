@@ -25,6 +25,8 @@ import DashboardCards from "../components/DashboardCards"
 import TrendingUpIcon from "@mui/icons-material/TrendingUp"
 import "./Dashboard.css"
 
+const API_URL = process.env.REACT_APP_API_URL
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -50,7 +52,7 @@ function Dashboard() {
   useEffect(() => {
     setLoading(true)
     axios
-      .get("http://localhost:5000/dashboard/charts")
+      .get(`${API_URL}/dashboard/charts`)
       .then((res) => {
         setChartData({
           barChart: res.data.barChart,

@@ -14,6 +14,8 @@ import MedicalServicesIcon from "@mui/icons-material/MedicalServices"
 import DescriptionIcon from "@mui/icons-material/Description"
 import "./DashboardCards.css"
 
+const API_URL = process.env.REACT_APP_API_URL
+
 function DashboardCards() {
   const [stats, setStats] = useState({
     totalPatients: 0,
@@ -26,7 +28,7 @@ function DashboardCards() {
   useEffect(() => {
     setLoading(true)
     axios
-      .get("http://localhost:5000/dashboard/stats")
+      .get(`${API_URL}/dashboard/stats`)
       .then((res) => {
         setStats({
           totalPatients: res.data.totalPatients || 0,
@@ -45,7 +47,8 @@ function DashboardCards() {
         })
       })
       .finally(() => setLoading(false))
-  }, [])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [])
 
   const cards = [
     {

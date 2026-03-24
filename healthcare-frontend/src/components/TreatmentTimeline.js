@@ -1,14 +1,15 @@
 import React,{useState} from "react"
 import axios from "axios"
 
-function TreatmentTimeline(){
+const API_URL = process.env.REACT_APP_API_URL
 
+function TreatmentTimeline(){
 const [patientId,setPatientId] = useState("")
 const [timeline,setTimeline] = useState([])
 
 const loadTimeline = ()=>{
 
-axios.get(`http://localhost:5000/treatments/${patientId}`)
+axios.get(`${API_URL}/treatments/${patientId}`)
 .then(res=>{
 setTimeline(res.data)
 })

@@ -17,6 +17,8 @@ import PersonIcon from "@mui/icons-material/Person"
 import LockIcon from "@mui/icons-material/Lock"
 import "./LoginPage.css"
 
+const API_URL = process.env.REACT_APP_API_URL
+
 function LoginPage({ setRole }) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -33,7 +35,7 @@ function LoginPage({ setRole }) {
     setError("")
 
     try {
-      const res = await axios.post("http://localhost:5000/login", {
+      const res = await axios.post(`${API_URL}/login`, {
         username,
         password,
       })

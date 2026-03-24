@@ -30,6 +30,8 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"
 import EventIcon from "@mui/icons-material/Event"
 import "./PatientProfile.css"
 
+const API_URL = process.env.REACT_APP_API_URL
+
 function PatientProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -40,8 +42,8 @@ function PatientProfile() {
   useEffect(() => {
     setLoading(true)
     Promise.all([
-      axios.get("http://localhost:5000/patients"),
-      axios.get(`http://localhost:5000/treatments/${id}`),
+      axios.get(`${API_URL}/patients`),
+      axios.get(`${API_URL}/treatments/${id}`),
     ])
       .then(([patientsRes, treatmentsRes]) => {
         const p = patientsRes.data.find(

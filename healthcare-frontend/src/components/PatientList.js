@@ -3,13 +3,14 @@ import axios from "axios"
 
 import { Link } from "react-router-dom"
 
-function PatientList(){
+const API_URL = process.env.REACT_APP_API_URL
 
+function PatientList(){
 const [patients,setPatients] = useState([])
 
 useEffect(()=>{
 
-axios.get("http://localhost:5000/patients")
+axios.get(`${API_URL}/patients`)
 .then(res=>{
 setPatients(res.data)
 })

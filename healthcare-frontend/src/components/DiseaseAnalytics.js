@@ -17,6 +17,8 @@ import {
   Filler
 } from "chart.js";
 
+const API_URL = process.env.REACT_APP_API_URL
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -32,11 +34,10 @@ ChartJS.register(
 );
 
 function DiseaseAnalytics(){
-
 const [chartData,setChartData] = useState({})
 
 useEffect(() => {
-  axios.get("http://localhost:5000/analytics/diseases").then((res) => {
+  axios.get(`${API_URL}/analytics/diseases`).then((res) => {
     const diseases = res.data.map((d) => d.disease);
     const counts = res.data.map((d) => d.total);
     setChartData({

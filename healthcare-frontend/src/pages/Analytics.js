@@ -27,6 +27,8 @@ import { Bar, Line, Pie, Radar } from "react-chartjs-2"
 import AnalyticsIcon from "@mui/icons-material/Analytics"
 import "./Analytics.css"
 
+const API_URL = process.env.REACT_APP_API_URL
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -53,7 +55,7 @@ function Analytics() {
   useEffect(() => {
     setLoading(true)
     axios
-      .get("http://localhost:5000/analytics/summary")
+      .get(`${API_URL}/analytics/summary`)
       .then((res) => {
         setChartData({
           treatmentDuration: res.data.treatmentDuration || null,
@@ -64,7 +66,7 @@ function Analytics() {
       })
       .catch(async () => {
         try {
-          const diseasesRes = await axios.get("http://localhost:5000/analytics/diseases")
+          const diseasesRes = await axios.get(`${API_URL}/analytics/diseases`)
           setChartData({
             treatmentDuration: null,
             diseaseDistribution: {

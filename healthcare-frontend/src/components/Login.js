@@ -1,14 +1,15 @@
 import React,{useState} from "react"
 import axios from "axios"
 
-function Login({setRole}){
+const API_URL = process.env.REACT_APP_API_URL
 
+function Login({setRole}){
 const [username,setUsername] = useState("")
 const [password,setPassword] = useState("")
 
 const login = ()=>{
 
-axios.post("http://localhost:5000/login",{
+axios.post(`${API_URL}/login`,{
 username,
 password
 })

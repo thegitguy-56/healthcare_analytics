@@ -1,13 +1,14 @@
 import React,{useEffect,useState} from "react"
 import axios from "axios"
 
-function AccessLogs(){
+const API_URL = process.env.REACT_APP_API_URL
 
+function AccessLogs(){
 const [logs,setLogs] = useState([])
 
 useEffect(()=>{
 
-axios.get("http://localhost:5000/logs")
+axios.get(`${API_URL}/logs`)
 .then(res=>{
 setLogs(res.data)
 })

@@ -2,8 +2,9 @@ import React,{useState} from "react"
 import axios from "axios"
 import { TextField, List, ListItemButton } from "@mui/material"
 
-function PatientSearch(){
+const API_URL = process.env.REACT_APP_API_URL
 
+function PatientSearch(){
 const [query,setQuery] = useState("")
 const [patients,setPatients] = useState([])
 
@@ -11,7 +12,7 @@ const search = (value)=>{
 
 setQuery(value)
 
-axios.get(`http://localhost:5000/patients`)
+axios.get(`${API_URL}/patients`)
 .then(res=>{
 
 const filtered = res.data.filter(p =>

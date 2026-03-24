@@ -26,6 +26,8 @@ import PersonIcon from "@mui/icons-material/Person"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import "./Patients.css"
 
+const API_URL = process.env.REACT_APP_API_URL
+
 function Patients() {
   const [patients, setPatients] = useState([])
   const [filteredPatients, setFilteredPatients] = useState([])
@@ -47,7 +49,7 @@ function Patients() {
   useEffect(() => {
     setLoading(true)
     axios
-      .get("http://localhost:5000/patients")
+      .get(`${API_URL}/patients`)
       .then((res) => {
         setPatients(res.data)
         setFilteredPatients(res.data)
@@ -57,6 +59,7 @@ function Patients() {
         setFilteredPatients([])
       })
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Add new patient handler
@@ -65,7 +68,7 @@ function Patients() {
     setAdding(true)
     setAddError("")
     try {
-      await axios.post("http://localhost:5000/patients", {
+      await axios.post(`${API_URL}/patients`, {
         ...newPatient,
         name: newPatient.name.trim(),
         address: newPatient.address.trim(),
@@ -73,7 +76,7 @@ function Patients() {
       })
       // Refresh patient list
       setLoading(true)
-      const res = await axios.get("http://localhost:5000/patients")
+      const res = await axios.get(`${API_URL}/patients`)
       setPatients(res.data)
       setFilteredPatients(res.data)
       setNewPatient({ name: "", age: "", gender: "", address: "" })
