@@ -1,149 +1,184 @@
-# Healthcare Analytics Platform
+# 🏥 Healthcare Analytics with Temporal Data
 
-A full-stack healthcare analytics application for managing patients, tracking treatments over time, role-based access, and visualizing clinical trends.
+A full-stack healthcare analytics system designed to manage patient records, track temporal medical history, and visualize insights using interactive dashboards.
 
-This repository is a monorepo with a React frontend and an Express + MySQL backend.
+---
 
-## Project Structure
+## Live Demo
 
-- `healthcare-frontend/` - React web app (dashboard, analytics, patients, admin, login)
-- `healthcare-backend/` - Node.js API server with MySQL queries
-- `COMPLETION_CHECKLIST.md` - completion checklist
-- `IMPLEMENTATION_SUMMARY.md` - detailed implementation notes
+🔗 Frontend: https://healthcare-analytics-rho.vercel.app/  
+🔗 Backend API: https://healthcare-backend-kr89.onrender.com 
+
+---
+
+## Project Overview
+
+This project implements a **temporal healthcare database system** that stores and analyzes time-based patient data such as diagnosis history and treatment records.
+
+It provides:
+- Real-time analytics dashboards
+- Role-based access system
+- Historical tracking of patient data
+- Full-stack deployment on cloud platforms
+
+---
+
+## Key Features
+
+- 📊 **Interactive Dashboard** – Visualizes disease trends, patient growth, and treatment patterns  
+- 🧾 **Temporal Data Tracking** – Maintains history using `valid_from` and `valid_to`  
+- 👨‍⚕️ **User Management System** – Admin can add/manage users (doctor, nurse, admin)  
+- 🔐 **Role-Based Access Control** – Secure access based on user roles  
+- 🗂 **Access Logs & Audit Trail** – Tracks system usage  
+- ☁️ **Cloud Deployment** – Fully deployed and accessible online  
+
+---
 
 ## Tech Stack
 
 ### Frontend
-- React 18
-- React Router
-- Material UI (`@mui/material`, `@mui/icons-material`, `@mui/lab`)
-- Emotion (`@emotion/react`, `@emotion/styled`)
-- Chart.js + `react-chartjs-2`
-- CRA tooling (`react-scripts`)
+- React.js
+- Material UI (MUI)
+- Chart.js
 
 ### Backend
 - Node.js
-- Express
-- MySQL (`mysql2`)
-- CORS
+- Express.js
+- MySQL2
+- REST APIs
 
 ### Database
-- MySQL database: `healthcare_temporal`
-- Main tables used by API:
-  - `Patient`
-  - `Treatment_History`
-  - `Diagnosis_History`
-  - `Doctor`
-  - `Users`
-  - `Access_Log`
+- MySQL (Temporal Database Design)
 
-## Features
+### Deployment
+- Vercel (Frontend)
+- Render (Backend)
+- Railway (Database)
 
-- Login with role-based behavior
-- Dashboard metrics and charts
-- Patient list and patient profile view
-- Treatment timeline/history per patient
-- Disease analytics
-- Admin view with access logs
-- Add patient API flow
+---
 
-## API Endpoints (Current)
+## System Architecture
 
-Base URL (local): `http://localhost:5000`
-
-- `GET /patients` - list all patients
-- `POST /patients` - add a new patient
-- `GET /treatments/:patientId` - treatment history for a patient (requires role header)
-- `GET /active-treatments/:date` - active treatments by date
-- `GET /analytics/diseases` - disease distribution summary
-- `GET /dashboard/stats` - dashboard totals
-- `POST /login` - login by username/password
-- `GET /logs` - access logs
-
-Role-protected route currently checks request header:
-- `role: Admin` or `role: Doctor`
-
-## Local Development Setup
-
-## 1) Clone and enter project
-
-```bash
-git clone https://github.com/thegitguy-56/healthcare_analytics.git
-cd healthcare
 ```
 
-## 2) Backend setup
+React (Vercel)
+↓
+Node.js API (Render)
+↓
+MySQL Database (Railway)
+
+```
+
+---
+
+## Database Design
+
+### Core Tables
+- Patient
+- Doctor
+- Appointment
+
+### Temporal Tables
+- Diagnosis_History
+- Treatment_History
+
+### Security Module
+- Access_Log
+- Users
+
+---
+
+## Sample Analytics
+
+- Disease Frequency Distribution  
+- Patient Trend Over Time  
+- Treatment Status Analysis  
+- Access Logs Monitoring  
+
+---
+
+## Authentication
+
+- Login-based access system  
+- Role-based permissions (Admin / Doctor / Nurse)  
+- Secure backend validation  
+
+---
+
+## Test Credentials
+
+```
+
+Username: admin
+Password: admin123
+
+````
+
+---
+
+## Notes
+
+- Backend may take ~20–30 seconds to wake up (Render free tier)
+- Ensure API URL is correctly configured in frontend environment variables
+
+---
+
+## Installation (Local Setup)
+
+### 1. Clone Repo
+```bash
+git clone https://github.com/thegitguy-56/healthcare_project.git
+````
+
+---
+
+### 2. Backend Setup
 
 ```bash
-cd healthcare-backend
+cd backend
 npm install
-npm run start
-```
-
-If `npm run start` is missing in your backend, you can run:
-
-```bash
 node server.js
 ```
 
-Backend runs on port `5000`.
+---
 
-## 3) Frontend setup
-
-Open a new terminal:
+### 3. Frontend Setup
 
 ```bash
-cd healthcare-frontend
+cd frontend
 npm install
 npm start
 ```
 
-Frontend runs on port `3000` by default.
+---
 
-## Database Configuration
+## Future Enhancements
 
-Current backend connection is defined in `healthcare-backend/server.js` with local credentials.
+* JWT Authentication
+* Real-time notifications
+* AI-based disease prediction
+* Mobile app integration
+* Advanced analytics dashboards
 
-```js
-host: "localhost"
-user: "root"
-password: "123"
-database: "healthcare_temporal"
-```
+---
 
-Before deploying, move these values to environment variables and remove hardcoded secrets.
+## Conclusion
 
-## Deployment Notes
+This project demonstrates the implementation of a **temporal database system in healthcare**, combined with modern full-stack development and cloud deployment.
 
-You can deploy from this single monorepo to two services:
+It showcases:
 
-- Frontend service from `healthcare-frontend/`
-- Backend service from `healthcare-backend/`
+* Database design concepts (DBMS)
+* API development
+* Frontend dashboarding
+* Real-world system deployment
 
-Typical platform pairing:
-- Frontend: Vercel or Netlify
-- Backend: Render or Railway
+---
 
-Important deployment tasks:
-- Set backend DB credentials via environment variables
-- Set frontend API base URL to deployed backend URL
-- Restrict backend CORS to your frontend domain
+## 👨‍💻 Author
 
-## Scripts
+Rohan V
+BTech Student – Computer Science
+Project: Healthcare Analytics with Temporal Data
 
-### Frontend (`healthcare-frontend/package.json`)
-- `npm start`
-- `npm run build`
-- `npm test`
-
-### Backend (`healthcare-backend/package.json`)
-- Currently only default `test` script is defined
-- Start backend with `node server.js` unless you add a `start` script
-
-## Future Improvements
-
-- Add environment-variable based config (`.env`) for backend
-- Add authentication tokens instead of plain role header
-- Add input validation and centralized error handling
-- Add tests for API and React components
-- Add CI workflow for lint/test/build
+---
