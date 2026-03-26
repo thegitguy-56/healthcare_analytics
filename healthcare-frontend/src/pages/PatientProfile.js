@@ -62,20 +62,30 @@ function PatientProfile() {
   const loadPatientData = async () => {
     setLoading(true)
     try {
-      const [patientsRes, treatmentsRes, diagnosesRes] = await Promise.all([
+      const [patientsRes, treatmentsRes, diagnosesRes] = await Promise.allSettled([
         axios.get(`${API_URL}/patients`),
         axios.get(`${API_URL}/treatments/${id}`, { headers: { role } }),
         axios.get(`${API_URL}/diagnoses/${id}`),
       ])
 
-      const p = patientsRes.data.find((x) => x.patient_id === parseInt(id, 10))
-      setPatient(p || null)
-      setTreatments(treatmentsRes.data || [])
-      setDiagnoses(diagnosesRes.data || [])
-    } catch {
-      setPatient(null)
-      setTreatments([])
-      setDiagnoses([])
+      if (patientsRes.status === "fulfilled") {
+        const p = patientsRes.value.data.find((x) => x.patient_id === parseInt(id, 10))
+        setPatient(p || null)
+      } else {
+        setPatient(null)
+      }
+
+      if (treatmentsRes.status === "fulfilled") {
+        setTreatments(treatmentsRes.value.data || [])
+      } else {
+        setTreatments([])
+      }
+
+      if (diagnosesRes.status === "fulfilled") {
+        setDiagnoses(diagnosesRes.value.data || [])
+      } else {
+        setDiagnoses([])
+      }
     } finally {
       setLoading(false)
     }

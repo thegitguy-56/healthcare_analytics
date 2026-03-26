@@ -94,8 +94,10 @@ const normalizeRole = (role) => {
 
 function authorizeRole(allowedRoles) {
   return (req, res, next) => {
-    const role = req.headers.role
-    if (!allowedRoles.includes(role)) {
+    const role = String(req.headers.role || "").trim().toLowerCase()
+    const normalizedAllowedRoles = allowedRoles.map((r) => String(r).toLowerCase())
+
+    if (!normalizedAllowedRoles.includes(role)) {
       return res.status(403).json({ message: "Access denied" })
     }
     next()
