@@ -76,7 +76,7 @@ const getDefaultDoctorId = async () => {
   const rows = await query(
     `
       SELECT ${doctorIdColumn} AS doctor_id
-      FROM Doctor
+      FROM doctor
       ORDER BY ${doctorIdColumn}
       LIMIT 1
     `
@@ -105,7 +105,7 @@ function authorizeRole(allowedRoles) {
 
 app.get("/patients", async (req, res) => {
   try {
-    const result = await query("SELECT * FROM Patient")
+    const result = await query("SELECT * FROM patient")
     res.json(result)
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch patients", error: err.message })
@@ -341,7 +341,7 @@ app.get("/analytics/diseases", async (req, res) => {
     const result = await query(
       `
         SELECT disease, COUNT(*) AS total
-        FROM Diagnosis_History
+        FROM diagnosis_history
         GROUP BY disease
         ORDER BY total DESC
       `
@@ -354,16 +354,16 @@ app.get("/analytics/diseases", async (req, res) => {
 
 app.get("/analytics/summary", async (req, res) => {
   try {
-    const patientColumns = await getTableColumns("Patient")
+    const patientColumns = await getTableColumns("patient")
     const ageExpression = patientColumns.has("age")
       ? "age"
-      : "TIMESTAMPDIFF(YEAR, dob, CURDATE())"
+      : "EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob))"
 
-    const [diseaseRows, durationRows, trendsRows, ageRows] = await Promise.all([
+     const [diseaseRows, durationRows, trendsRows, ageRows] = await Promise.all([
       query(
         `
           SELECT disease, COUNT(*) AS total
-          FROM Diagnosis_History
+          FROM diagnosis_history
           GROUP BY disease
           ORDER BY total DESC
           LIMIT 8
@@ -372,21 +372,21 @@ app.get("/analytics/summary", async (req, res) => {
       query(
         `
           SELECT
-            SUM(CASE WHEN DATEDIFF(valid_to, valid_from) BETWEEN 0 AND 7 THEN 1 ELSE 0 END) AS d_0_7,
-            SUM(CASE WHEN DATEDIFF(valid_to, valid_from) BETWEEN 8 AND 14 THEN 1 ELSE 0 END) AS d_8_14,
-            SUM(CASE WHEN DATEDIFF(valid_to, valid_from) BETWEEN 15 AND 30 THEN 1 ELSE 0 END) AS d_15_30,
-            SUM(CASE WHEN DATEDIFF(valid_to, valid_from) > 30 THEN 1 ELSE 0 END) AS d_31_plus
-          FROM Treatment_History
+            SUM(CASE WHEN (valid_to - valid_from) >= 0 AND (valid_to - valid_from) <= 7 THEN 1 ELSE 0 END) AS d_0_7,
+            SUM(CASE WHEN (valid_to - valid_from) >= 8 AND (valid_to - valid_from) <= 14 THEN 1 ELSE 0 END) AS d_8_14,
+            SUM(CASE WHEN (valid_to - valid_from) >= 15 AND (valid_to - valid_from) <= 30 THEN 1 ELSE 0 END) AS d_15_30,
+            SUM(CASE WHEN (valid_to - valid_from) > 30 THEN 1 ELSE 0 END) AS d_31_plus
+          FROM treatment_history
         `
       ),
       query(
         `
           SELECT
-            DATE_FORMAT(valid_from, '%Y-%m') AS month,
+            TO_CHAR(valid_from, 'YYYY-MM') AS month,
             COUNT(*) AS admissions,
-            SUM(CASE WHEN valid_to <= CURDATE() THEN 1 ELSE 0 END) AS completed
-          FROM Treatment_History
-          GROUP BY month
+            SUM(CASE WHEN valid_to <= CURRENT_DATE THEN 1 ELSE 0 END) AS completed
+          FROM treatment_history
+          GROUP BY TO_CHAR(valid_from, 'YYYY-MM')
           ORDER BY month
         `
       ),
@@ -401,16 +401,22 @@ app.get("/analytics/summary", async (req, res) => {
               ELSE '61+'
             END AS age_group,
             COUNT(*) AS total
-          FROM Patient
+          FROM patient
           WHERE ${ageExpression} IS NOT NULL
-          GROUP BY age_group
+          GROUP BY CASE
+              WHEN ${ageExpression} < 18 THEN '0-17'
+              WHEN ${ageExpression} BETWEEN 18 AND 30 THEN '18-30'
+              WHEN ${ageExpression} BETWEEN 31 AND 45 THEN '31-45'
+              WHEN ${ageExpression} BETWEEN 46 AND 60 THEN '46-60'
+              ELSE '61+'
+            END
           ORDER BY
-            CASE age_group
-              WHEN '0-17' THEN 1
-              WHEN '18-30' THEN 2
-              WHEN '31-45' THEN 3
-              WHEN '46-60' THEN 4
-              WHEN '61+' THEN 5
+            CASE
+              WHEN age_group = '0-17' THEN 1
+              WHEN age_group = '18-30' THEN 2
+              WHEN age_group = '31-45' THEN 3
+              WHEN age_group = '46-60' THEN 4
+              WHEN age_group = '61+' THEN 5
             END
         `
       ),
@@ -513,7 +519,7 @@ app.get("/dashboard/charts", async (req, res) => {
       query(
         `
           SELECT disease, COUNT(*) AS total
-          FROM Diagnosis_History
+          FROM diagnosis_history
           GROUP BY disease
           ORDER BY total DESC
           LIMIT 6
@@ -521,9 +527,9 @@ app.get("/dashboard/charts", async (req, res) => {
       ),
       query(
         `
-          SELECT DATE_FORMAT(valid_from, '%Y-%m') AS month, COUNT(*) AS total
-          FROM Treatment_History
-          GROUP BY month
+          SELECT TO_CHAR(valid_from, 'YYYY-MM') AS month, COUNT(*) AS total
+          FROM treatment_history
+          GROUP BY TO_CHAR(valid_from, 'YYYY-MM')
           ORDER BY month
         `
       ),
@@ -531,13 +537,17 @@ app.get("/dashboard/charts", async (req, res) => {
         `
           SELECT
             CASE
-              WHEN valid_to < CURDATE() THEN 'Completed'
-              WHEN valid_from > CURDATE() THEN 'Scheduled'
+              WHEN valid_to < CURRENT_DATE THEN 'Completed'
+              WHEN valid_from > CURRENT_DATE THEN 'Scheduled'
               ELSE 'Active'
             END AS status,
             COUNT(*) AS total
-          FROM Treatment_History
-          GROUP BY status
+          FROM treatment_history
+          GROUP BY CASE
+              WHEN valid_to < CURRENT_DATE THEN 'Completed'
+              WHEN valid_from > CURRENT_DATE THEN 'Scheduled'
+              ELSE 'Active'
+            END
         `
       ),
     ])
@@ -606,10 +616,10 @@ app.get("/dashboard/charts", async (req, res) => {
 app.get("/dashboard/stats", async (req, res) => {
   try {
     const [patients, doctors, treatments, diagnoses] = await Promise.all([
-      query("SELECT COUNT(*) AS totalPatients FROM Patient"),
-      query("SELECT COUNT(*) AS totalDoctors FROM Doctor"),
-      query("SELECT COUNT(*) AS totalTreatments FROM Treatment_History"),
-      query("SELECT COUNT(*) AS totalDiagnoses FROM Diagnosis_History"),
+      query("SELECT COUNT(*) AS totalPatients FROM patient"),
+      query("SELECT COUNT(*) AS totalDoctors FROM doctor"),
+      query("SELECT COUNT(*) AS totalTreatments FROM treatment_history"),
+      query("SELECT COUNT(*) AS totalDiagnoses FROM diagnosis_history"),
     ])
 
     res.json({
@@ -654,7 +664,7 @@ app.get("/logs", async (req, res) => {
     const result = await query(
       `
         SELECT *
-        FROM Access_Log
+        FROM access_log
         ORDER BY access_time DESC
       `
     )
@@ -666,8 +676,8 @@ app.get("/logs", async (req, res) => {
 
 app.get("/admin/users", async (req, res) => {
   try {
-    const columns = await getTableColumns("Users")
-    const usersTable = await resolveTableName("Users")
+    const columns = await getTableColumns("users")
+    const usersTable = await resolveTableName("users")
 
     const idColumn = getFirstExistingColumn(columns, ["user_id", "id", "uid", "username"])
     const usernameColumn = getFirstExistingColumn(columns, ["username", "name"])
