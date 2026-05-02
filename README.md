@@ -44,16 +44,16 @@ It provides:
 ### Backend
 - Node.js
 - Express.js
-- MySQL2
+- PostgreSQL (pg)
 - REST APIs
 
 ### Database
-- MySQL (Temporal Database Design)
+- PostgreSQL (Temporal Database Design) on Supabase
 
 ### Deployment
 - Vercel (Frontend)
 - Render (Backend)
-- Railway (Database)
+- Supabase (Database)
 
 ---
 
@@ -65,7 +65,7 @@ React (Vercel)
 ↓
 Node.js API (Render)
 ↓
-MySQL Database (Railway)
+PostgreSQL Database (Supabase)
 
 ```
 
