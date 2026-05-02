@@ -26,9 +26,13 @@ db.on("error", (err) => {
 
 console.log("PostgreSQL pool initialized")
 
-const query = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.query(sql, params, (err, result) => {
+const query = (sql, params = []) => {
+  // Convert MySQL style ? placeholders to PostgreSQL style $1, $2, etc.
+  let paramIndex = 1
+  const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`)
+  
+  return new Promise((resolve, reject) => {
+    db.query(pgSql, params, (err, result) => {
       if (err) {
         reject(err)
       } else {
@@ -36,6 +40,7 @@ const query = (sql, params = []) =>
       }
     })
   })
+}
 
 const getTableColumns = async (tableName) => {
   const rows = await query(
@@ -637,7 +642,7 @@ app.post("/login", async (req, res) => {
   const { username, password } = req.body
 
   try {
-    const usersTable = await resolveTableName("Users")
+    const usersTable = await resolveTableName("users")
     const result = await query(
       `
         SELECT role FROM ${usersTable}
