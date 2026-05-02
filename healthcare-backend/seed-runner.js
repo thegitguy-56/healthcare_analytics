@@ -1,9 +1,9 @@
 const fs = require("fs")
-const mysql = require("mysql2/promise")
+const { Client } = require("pg")
 require("dotenv").config()
 
 async function run() {
-  const sql = fs.readFileSync("sample_seed_data.sql", "utf8")
+  const sql = fs.readFileSync("sample_seed_data_simple.sql", "utf8")
 
   const statementsCount = (sql.match(/;/g) || []).length
 
@@ -11,35 +11,36 @@ async function run() {
     String(process.env.DB_SSL || "").toLowerCase()
   )
 
-  const db = await mysql.createConnection({
+  const db = new Client({
     host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "root",
+    user: process.env.DB_USER || "postgres",
     password: process.env.DB_PASSWORD || "123",
-    database: process.env.DB_NAME || "healthcare_temporal",
-    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+    database: process.env.DB_NAME || "postgres",
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
     ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined,
-    multipleStatements: true,
+    family: process.env.DB_FAMILY ? Number(process.env.DB_FAMILY) : 4,
   })
 
-  const [usersTableRows] = await db.query(
+  await db.connect()
+
+  const usersTableRows = await db.query(
     `
-      SELECT TABLE_NAME
-      FROM INFORMATION_SCHEMA.TABLES
-      WHERE TABLE_SCHEMA = ? AND LOWER(TABLE_NAME) = LOWER('Users')
-      LIMIT 1
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = $1
     `,
-    [process.env.DB_NAME || "healthcare_temporal"]
+    ["Users"]
   )
-  const usersTableName = usersTableRows[0]?.TABLE_NAME || "Users"
+  const usersTableName = usersTableRows.rows[0]?.table_name || "Users"
   const sqlToRun = sql.replace(/\bUsers\b/g, usersTableName)
 
   await db.query(sqlToRun)
 
-  const [p] = await db.query("SELECT COUNT(*) AS c FROM Patient")
-  const [d] = await db.query("SELECT COUNT(*) AS c FROM Diagnosis_History")
-  const [t] = await db.query("SELECT COUNT(*) AS c FROM Treatment_History")
-  const [u] = await db.query(`SELECT COUNT(*) AS c FROM ${usersTableName}`)
-  const [l] = await db.query("SELECT COUNT(*) AS c FROM Access_Log")
+  const p = await db.query("SELECT COUNT(*) AS c FROM Patient")
+  const d = await db.query("SELECT COUNT(*) AS c FROM Diagnosis_History")
+  const t = await db.query("SELECT COUNT(*) AS c FROM Treatment_History")
+  const u = await db.query(`SELECT COUNT(*) AS c FROM ${usersTableName}`)
+  const l = await db.query("SELECT COUNT(*) AS c FROM Access_Log")
 
   console.log(
     JSON.stringify(
@@ -47,11 +48,11 @@ async function run() {
         executedStatements: statementsCount,
         statementsInFile: statementsCount,
         counts: {
-          Patient: p[0].c,
-          Diagnosis_History: d[0].c,
-          Treatment_History: t[0].c,
-          Users: u[0].c,
-          Access_Log: l[0].c,
+          Patient: p.rows[0].c,
+          Diagnosis_History: d.rows[0].c,
+          Treatment_History: t.rows[0].c,
+          Users: u.rows[0].c,
+          Access_Log: l.rows[0].c,
         },
       },
       null,

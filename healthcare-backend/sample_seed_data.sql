@@ -2,7 +2,7 @@
 -- Database: healthcare_temporal
 
 -- Doctors
-INSERT INTO Doctor (name, specialization)
+INSERT INTO doctor (name, specialization)
 SELECT s.name, s.specialization
 FROM (
 	SELECT 'Dr. Emily Carter' AS name, 'General Medicine' AS specialization
@@ -12,13 +12,13 @@ FROM (
 ) AS s
 WHERE NOT EXISTS (
 	SELECT 1
-	FROM Doctor d
+	FROM doctor d
 	WHERE d.name = s.name
 		AND d.specialization = s.specialization
 );
 
 -- Users for login/admin
-INSERT INTO Users (username, password, role)
+INSERT INTO users (username, password, role)
 SELECT s.username, s.password, s.role
 FROM (
 	SELECT 'admin' AS username, 'admin123' AS password, 'Admin' AS role
@@ -27,13 +27,13 @@ FROM (
 ) AS s
 WHERE NOT EXISTS (
 	SELECT 1
-	FROM Users u
+	FROM users u
 	WHERE u.username = s.username
 );
 
 -- Patients (schema uses dob/phone)
-INSERT INTO Patient (name, dob, gender, phone)
-SELECT s.name, s.dob, s.gender, s.phone
+INSERT INTO patient (name, dob, gender, phone)
+SELECT s.name, s.dob::DATE, s.gender, s.phone
 FROM (
 	SELECT 'Aarav Singh' AS name, '2001-06-12' AS dob, 'Male' AS gender, '9876500011' AS phone
 	UNION ALL SELECT 'Maya Sharma', '1987-03-22', 'Female', '9876500012'
@@ -46,16 +46,16 @@ FROM (
 ) AS s
 WHERE NOT EXISTS (
 	SELECT 1
-	FROM Patient p
+	FROM patient p
 	WHERE p.name = s.name
-		AND p.dob = s.dob
+		AND p.dob = s.dob::DATE
 		AND p.gender = s.gender
 		AND p.phone = s.phone
 );
 
 -- Diagnosis history (drives disease distribution chart)
-INSERT INTO Diagnosis_History (patient_id, doctor_id, disease, valid_from, valid_to)
-SELECT s.patient_id, s.doctor_id, s.disease, s.valid_from, s.valid_to
+INSERT INTO diagnosis_history (patient_id, doctor_id, disease, valid_from, valid_to)
+SELECT s.patient_id, s.doctor_id, s.disease, s.valid_from::DATE, s.valid_to::DATE
 FROM (
 	SELECT 1 AS patient_id, 1 AS doctor_id, 'Flu' AS disease, '2025-01-04' AS valid_from, '2025-01-18' AS valid_to
 	UNION ALL SELECT 2, 2, 'Asthma', '2025-02-01', '2025-03-10'
@@ -72,17 +72,17 @@ FROM (
 ) AS s
 WHERE NOT EXISTS (
 	SELECT 1
-	FROM Diagnosis_History dh
+	FROM diagnosis_history dh
 	WHERE dh.patient_id = s.patient_id
 		AND dh.doctor_id = s.doctor_id
 		AND dh.disease = s.disease
-		AND dh.valid_from = s.valid_from
-		AND dh.valid_to = s.valid_to
+		AND dh.valid_from = s.valid_from::DATE
+		AND dh.valid_to = s.valid_to::DATE
 );
 
 -- Treatment history (drives duration/trends/status charts)
-INSERT INTO Treatment_History (patient_id, treatment_type, medication, valid_from, valid_to)
-SELECT s.patient_id, s.treatment_type, s.medication, s.valid_from, s.valid_to
+INSERT INTO treatment_history (patient_id, treatment_type, medication, valid_from, valid_to)
+SELECT s.patient_id, s.treatment_type, s.medication, s.valid_from::DATE, s.valid_to::DATE
 FROM (
 	SELECT 1 AS patient_id, 'Antiviral Therapy' AS treatment_type, 'Oseltamivir' AS medication, '2025-01-05' AS valid_from, '2025-01-10' AS valid_to
 	UNION ALL SELECT 2, 'Inhalation Therapy', 'Budesonide', '2025-02-02', '2025-02-20'
@@ -101,29 +101,29 @@ FROM (
 ) AS s
 WHERE NOT EXISTS (
 	SELECT 1
-	FROM Treatment_History th
+	FROM treatment_history th
 	WHERE th.patient_id = s.patient_id
 		AND th.treatment_type = s.treatment_type
 		AND th.medication = s.medication
-		AND th.valid_from = s.valid_from
-		AND th.valid_to = s.valid_to
+		AND th.valid_from = s.valid_from::DATE
+		AND th.valid_to = s.valid_to::DATE
 );
 
 -- Access logs for admin table
-INSERT INTO Access_Log (user_role, table_accessed, access_time)
-SELECT s.user_role, s.table_accessed, s.access_time
+INSERT INTO access_log (user_role, table_accessed, access_time)
+SELECT s.user_role, s.table_accessed, s.access_time::TIMESTAMP
 FROM (
-	SELECT 'Admin' AS user_role, 'Users' AS table_accessed, '2026-03-20 09:10:00' AS access_time
-	UNION ALL SELECT 'Doctor', 'Patient', '2026-03-20 10:22:00'
-	UNION ALL SELECT 'Nurse', 'Treatment_History', '2026-03-20 11:40:00'
-	UNION ALL SELECT 'Admin', 'Diagnosis_History', '2026-03-21 08:30:00'
-	UNION ALL SELECT 'Doctor', 'Patient', '2026-03-21 12:05:00'
-	UNION ALL SELECT 'Admin', 'Access_Log', '2026-03-22 14:45:00'
+	SELECT 'Admin' AS user_role, 'users' AS table_accessed, '2026-03-20 09:10:00' AS access_time
+	UNION ALL SELECT 'Doctor', 'patient', '2026-03-20 10:22:00'
+	UNION ALL SELECT 'Nurse', 'treatment_history', '2026-03-20 11:40:00'
+	UNION ALL SELECT 'Admin', 'diagnosis_history', '2026-03-21 08:30:00'
+	UNION ALL SELECT 'Doctor', 'patient', '2026-03-21 12:05:00'
+	UNION ALL SELECT 'Admin', 'access_log', '2026-03-22 14:45:00'
 ) AS s
 WHERE NOT EXISTS (
 	SELECT 1
-	FROM Access_Log al
+	FROM access_log al
 	WHERE al.user_role = s.user_role
 		AND al.table_accessed = s.table_accessed
-		AND al.access_time = s.access_time
+		AND al.access_time = s.access_time::TIMESTAMP
 );

@@ -1,5 +1,5 @@
 const express = require("express")
-const mysql = require("mysql2")
+const { Pool } = require("pg")
 const cors = require("cors")
 require("dotenv").config()
 
@@ -10,22 +10,21 @@ app.use(express.json())
 
 const dbConfig = {
   host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
+  user: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD || "123",
-  database: process.env.DB_NAME || "healthcare_temporal",
-  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+  database: process.env.DB_NAME || "postgres",
+  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
+  family: process.env.DB_FAMILY ? Number(process.env.DB_FAMILY) : 4,
 }
 
-const db = mysql.createConnection(dbConfig)
+const db = new Pool(dbConfig)
 
-db.connect((err) => {
-  if (err) {
-    console.log("Database connection failed")
-    return
-  }
-
-  console.log("Connected to MySQL")
+db.on("error", (err) => {
+  console.error("Unexpected error on idle client", err)
 })
+
+console.log("PostgreSQL pool initialized")
 
 const query = (sql, params = []) =>
   new Promise((resolve, reject) => {
@@ -33,7 +32,7 @@ const query = (sql, params = []) =>
       if (err) {
         reject(err)
       } else {
-        resolve(result)
+        resolve(result.rows || result)
       }
     })
   })
@@ -41,11 +40,11 @@ const query = (sql, params = []) =>
 const getTableColumns = async (tableName) => {
   const rows = await query(
     `
-      SELECT COLUMN_NAME
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_SCHEMA = ? AND LOWER(TABLE_NAME) = LOWER(?)
+      SELECT column_name as "COLUMN_NAME"
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = $1
     `,
-    [dbConfig.database, tableName]
+    [tableName]
   )
   return new Set(rows.map((r) => r.COLUMN_NAME))
 }
@@ -53,14 +52,14 @@ const getTableColumns = async (tableName) => {
 const resolveTableName = async (tableName) => {
   const rows = await query(
     `
-      SELECT TABLE_NAME
-      FROM INFORMATION_SCHEMA.TABLES
-      WHERE TABLE_SCHEMA = ? AND LOWER(TABLE_NAME) = LOWER(?)
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = $1
       LIMIT 1
     `,
-    [dbConfig.database, tableName]
+    [tableName]
   )
-  return rows[0]?.TABLE_NAME || tableName
+  return rows[0]?.table_name || tableName
 }
 
 const getFirstExistingColumn = (columns, candidates) =>
