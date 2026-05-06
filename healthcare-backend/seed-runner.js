@@ -3,7 +3,7 @@ const { Client } = require("pg")
 require("dotenv").config()
 
 async function run() {
-  const sql = fs.readFileSync("sample_seed_data_simple.sql", "utf8")
+  const sql = fs.readFileSync("seed_data_new.sql", "utf8")
 
   const statementsCount = (sql.match(/;/g) || []).length
 
@@ -27,20 +27,20 @@ async function run() {
     `
       SELECT table_name
       FROM information_schema.tables
-      WHERE table_schema = 'public' AND table_name = $1
+      WHERE table_schema = 'public' AND lower(table_name) = $1
     `,
-    ["Users"]
+    ["users"]
   )
-  const usersTableName = usersTableRows.rows[0]?.table_name || "Users"
+  const usersTableName = usersTableRows.rows[0]?.table_name || "users"
   const sqlToRun = sql.replace(/\bUsers\b/g, usersTableName)
 
   await db.query(sqlToRun)
 
-  const p = await db.query("SELECT COUNT(*) AS c FROM Patient")
-  const d = await db.query("SELECT COUNT(*) AS c FROM Diagnosis_History")
-  const t = await db.query("SELECT COUNT(*) AS c FROM Treatment_History")
+  const p = await db.query("SELECT COUNT(*) AS c FROM patient")
+  const d = await db.query("SELECT COUNT(*) AS c FROM diagnosis_history")
+  const t = await db.query("SELECT COUNT(*) AS c FROM treatment_history")
   const u = await db.query(`SELECT COUNT(*) AS c FROM ${usersTableName}`)
-  const l = await db.query("SELECT COUNT(*) AS c FROM Access_Log")
+  const l = await db.query("SELECT COUNT(*) AS c FROM access_log")
 
   console.log(
     JSON.stringify(
@@ -48,11 +48,11 @@ async function run() {
         executedStatements: statementsCount,
         statementsInFile: statementsCount,
         counts: {
-          Patient: p.rows[0].c,
-          Diagnosis_History: d.rows[0].c,
-          Treatment_History: t.rows[0].c,
-          Users: u.rows[0].c,
-          Access_Log: l.rows[0].c,
+          patient: p.rows[0].c,
+          diagnosis_history: d.rows[0].c,
+          treatment_history: t.rows[0].c,
+          users: u.rows[0].c,
+          access_log: l.rows[0].c,
         },
       },
       null,

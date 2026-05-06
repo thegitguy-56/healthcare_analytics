@@ -565,5 +565,3 @@ The application is feature-complete, well-documented, and ready for production d
 **Production Ready**: YES  
 
 ---
-
-*For detailed information, see DESIGN_SYSTEM.md and DEVELOPER_GUIDE.md*

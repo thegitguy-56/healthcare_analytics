@@ -71,7 +71,7 @@ const getFirstExistingColumn = (columns, candidates) =>
   candidates.find((name) => columns.has(name)) || null
 
 const getDefaultDoctorId = async () => {
-  const doctorColumns = await getTableColumns("Doctor")
+  const doctorColumns = await getTableColumns("doctor")
   const doctorIdColumn = getFirstExistingColumn(doctorColumns, ["doctor_id", "id"])
 
   if (!doctorIdColumn) {
@@ -125,7 +125,7 @@ app.post("/patients", async (req, res) => {
   }
 
   try {
-    const columns = await getTableColumns("Patient")
+    const columns = await getTableColumns("patient")
     const payload = {}
 
     if (columns.has("name")) payload.name = String(name).trim()
@@ -162,7 +162,7 @@ app.post("/patients", async (req, res) => {
 
     const insertColumns = Object.keys(payload)
     const placeholders = insertColumns.map(() => "?").join(", ")
-    const sql = `INSERT INTO Patient (${insertColumns.join(", ")}) VALUES (${placeholders})`
+    const sql = `INSERT INTO patient (${insertColumns.join(", ")}) VALUES (${placeholders})`
     const result = await query(sql, insertColumns.map((k) => payload[k]))
 
     res.status(201).json({
@@ -188,7 +188,7 @@ app.get("/diagnoses/:patientId", async (req, res) => {
     const result = await query(
       `
         SELECT *
-        FROM Diagnosis_History
+        FROM diagnosis_history
         WHERE patient_id = ?
         ORDER BY valid_from DESC
       `,
@@ -213,7 +213,7 @@ app.post("/diagnoses/:patientId", async (req, res) => {
   }
 
   try {
-    const columns = await getTableColumns("Diagnosis_History")
+    const columns = await getTableColumns("diagnosis_history")
     const payload = {}
 
     if (columns.has("patient_id")) payload.patient_id = patientId
@@ -233,12 +233,12 @@ app.post("/diagnoses/:patientId", async (req, res) => {
     }
 
     if (!payload.patient_id || !payload.disease || !payload.valid_from) {
-      return res.status(500).json({ message: "Diagnosis_History schema is not compatible" })
+      return res.status(500).json({ message: "diagnosis_history schema is not compatible" })
     }
 
     const insertColumns = Object.keys(payload)
     const placeholders = insertColumns.map(() => "?").join(", ")
-    const sql = `INSERT INTO Diagnosis_History (${insertColumns.join(", ")}) VALUES (${placeholders})`
+    const sql = `INSERT INTO diagnosis_history (${insertColumns.join(", ")}) VALUES (${placeholders})`
     const result = await query(sql, insertColumns.map((k) => payload[k]))
 
     res.status(201).json({
@@ -270,7 +270,7 @@ app.get("/treatments/:patientId", authorizeRole(["Admin", "Doctor", "Nurse"]), a
             WHEN valid_from > CURDATE() THEN 'Scheduled'
             ELSE 'Active'
           END AS status
-        FROM Treatment_History
+        FROM treatment_history
         WHERE patient_id = ?
         ORDER BY valid_from DESC
       `,
@@ -295,7 +295,7 @@ app.post("/treatments/:patientId", async (req, res) => {
   }
 
   try {
-    const columns = await getTableColumns("Treatment_History")
+    const columns = await getTableColumns("treatment_history")
     const payload = {}
 
     if (columns.has("patient_id")) payload.patient_id = patientId
@@ -306,12 +306,12 @@ app.post("/treatments/:patientId", async (req, res) => {
     if (columns.has("status") && status) payload.status = String(status).trim()
 
     if (!payload.patient_id || !payload.treatment_type || !payload.valid_from) {
-      return res.status(500).json({ message: "Treatment_History schema is not compatible" })
+      return res.status(500).json({ message: "treatment_history schema is not compatible" })
     }
 
     const insertColumns = Object.keys(payload)
     const placeholders = insertColumns.map(() => "?").join(", ")
-    const sql = `INSERT INTO Treatment_History (${insertColumns.join(", ")}) VALUES (${placeholders})`
+    const sql = `INSERT INTO treatment_history (${insertColumns.join(", ")}) VALUES (${placeholders})`
     const result = await query(sql, insertColumns.map((k) => payload[k]))
 
     res.status(201).json({
@@ -330,7 +330,7 @@ app.get("/active-treatments/:date", async (req, res) => {
     const result = await query(
       `
         SELECT *
-        FROM Treatment_History
+        FROM treatment_history
         WHERE ? BETWEEN valid_from AND valid_to
       `,
       [date]
@@ -718,8 +718,8 @@ app.post("/admin/users", async (req, res) => {
   }
 
   try {
-    const columns = await getTableColumns("Users")
-    const usersTable = await resolveTableName("Users")
+    const columns = await getTableColumns("users")
+    const usersTable = await resolveTableName("users")
     const payload = {}
 
     const normalizedRole = String(role || "").trim().toLowerCase()
@@ -752,8 +752,8 @@ app.post("/admin/users", async (req, res) => {
 
 app.delete("/admin/users/:id", async (req, res) => {
   try {
-    const columns = await getTableColumns("Users")
-    const usersTable = await resolveTableName("Users")
+    const columns = await getTableColumns("users")
+    const usersTable = await resolveTableName("users")
     const idColumn = getFirstExistingColumn(columns, ["user_id", "id", "uid"])
 
     if (idColumn) {
@@ -774,7 +774,7 @@ app.delete("/admin/users/:id", async (req, res) => {
 
 app.get("/admin/access-logs", async (req, res) => {
   try {
-    const columns = await getTableColumns("Access_Log")
+    const columns = await getTableColumns("access_log")
     const idColumn = getFirstExistingColumn(columns, ["log_id", "id"])
     const userColumn = getFirstExistingColumn(columns, ["username", "user_name", "user", "user_role"])
     const actionColumn = getFirstExistingColumn(columns, ["action", "activity", "table_accessed"])
@@ -788,7 +788,7 @@ app.get("/admin/access-logs", async (req, res) => {
         ${actionColumn ? actionColumn : "'N/A'"} AS action,
         ${timeColumn ? timeColumn : "NOW()"} AS timestamp,
         ${statusColumn ? statusColumn : "'Success'"} AS status
-      FROM Access_Log
+      FROM access_log
       ORDER BY timestamp DESC
     `
 
