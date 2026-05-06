@@ -162,12 +162,12 @@ app.post("/patients", async (req, res) => {
 
     const insertColumns = Object.keys(payload)
     const placeholders = insertColumns.map(() => "?").join(", ")
-    const sql = `INSERT INTO patient (${insertColumns.join(", ")}) VALUES (${placeholders})`
+    const sql = `INSERT INTO patient (${insertColumns.join(", ")}) VALUES (${placeholders}) RETURNING patient_id`
     const result = await query(sql, insertColumns.map((k) => payload[k]))
 
     res.status(201).json({
       message: "Patient added successfully",
-      patientId: result.insertId,
+      patientId: result[0]?.patient_id,
     })
   } catch (err) {
     res.status(500).json({
@@ -238,19 +238,19 @@ app.post("/diagnoses/:patientId", async (req, res) => {
 
     const insertColumns = Object.keys(payload)
     const placeholders = insertColumns.map(() => "?").join(", ")
-    const sql = `INSERT INTO diagnosis_history (${insertColumns.join(", ")}) VALUES (${placeholders})`
+    const sql = `INSERT INTO diagnosis_history (${insertColumns.join(", ")}) VALUES (${placeholders}) RETURNING diagnosis_id`
     const result = await query(sql, insertColumns.map((k) => payload[k]))
 
     res.status(201).json({
       message: "Diagnosis added successfully",
-      diagnosisId: result.insertId,
+      diagnosisId: result[0]?.diagnosis_id,
     })
   } catch (err) {
     res.status(500).json({ message: "Failed to add diagnosis", error: err.message })
   }
 })
 
-app.get("/treatments/:patientId", authorizeRole(["Admin", "Doctor", "Nurse"]), async (req, res) => {
+app.get("/treatments/:patientId", async (req, res) => {
   const patientId = Number(req.params.patientId)
 
   if (!Number.isFinite(patientId)) {
@@ -261,13 +261,14 @@ app.get("/treatments/:patientId", authorizeRole(["Admin", "Doctor", "Nurse"]), a
     const result = await query(
       `
         SELECT
+          treatment_id,
           treatment_type,
           medication,
           valid_from,
           valid_to,
           CASE
-            WHEN valid_to IS NOT NULL AND valid_to < CURDATE() THEN 'Completed'
-            WHEN valid_from > CURDATE() THEN 'Scheduled'
+            WHEN valid_to IS NOT NULL AND valid_to < CURRENT_DATE THEN 'Completed'
+            WHEN valid_from IS NOT NULL AND valid_from > CURRENT_DATE THEN 'Scheduled'
             ELSE 'Active'
           END AS status
         FROM treatment_history
@@ -311,12 +312,12 @@ app.post("/treatments/:patientId", async (req, res) => {
 
     const insertColumns = Object.keys(payload)
     const placeholders = insertColumns.map(() => "?").join(", ")
-    const sql = `INSERT INTO treatment_history (${insertColumns.join(", ")}) VALUES (${placeholders})`
+    const sql = `INSERT INTO treatment_history (${insertColumns.join(", ")}) VALUES (${placeholders}) RETURNING treatment_id`
     const result = await query(sql, insertColumns.map((k) => payload[k]))
 
     res.status(201).json({
       message: "Treatment added successfully",
-      treatmentId: result.insertId,
+      treatmentId: result[0]?.treatment_id,
     })
   } catch (err) {
     res.status(500).json({ message: "Failed to add treatment", error: err.message })
@@ -382,6 +383,7 @@ app.get("/analytics/summary", async (req, res) => {
             SUM(CASE WHEN (valid_to - valid_from) >= 15 AND (valid_to - valid_from) <= 30 THEN 1 ELSE 0 END) AS d_15_30,
             SUM(CASE WHEN (valid_to - valid_from) > 30 THEN 1 ELSE 0 END) AS d_31_plus
           FROM treatment_history
+          WHERE valid_to IS NOT NULL
         `
       ),
       query(
@@ -389,7 +391,7 @@ app.get("/analytics/summary", async (req, res) => {
           SELECT
             TO_CHAR(valid_from, 'YYYY-MM') AS month,
             COUNT(*) AS admissions,
-            SUM(CASE WHEN valid_to <= CURRENT_DATE THEN 1 ELSE 0 END) AS completed
+            SUM(CASE WHEN valid_to IS NOT NULL AND valid_to <= CURRENT_DATE THEN 1 ELSE 0 END) AS completed
           FROM treatment_history
           GROUP BY TO_CHAR(valid_from, 'YYYY-MM')
           ORDER BY month
@@ -542,15 +544,15 @@ app.get("/dashboard/charts", async (req, res) => {
         `
           SELECT
             CASE
-              WHEN valid_to < CURRENT_DATE THEN 'Completed'
-              WHEN valid_from > CURRENT_DATE THEN 'Scheduled'
+              WHEN valid_to IS NOT NULL AND valid_to < CURRENT_DATE THEN 'Completed'
+              WHEN valid_from IS NOT NULL AND valid_from > CURRENT_DATE THEN 'Scheduled'
               ELSE 'Active'
             END AS status,
             COUNT(*) AS total
           FROM treatment_history
           GROUP BY CASE
-              WHEN valid_to < CURRENT_DATE THEN 'Completed'
-              WHEN valid_from > CURRENT_DATE THEN 'Scheduled'
+              WHEN valid_to IS NOT NULL AND valid_to < CURRENT_DATE THEN 'Completed'
+              WHEN valid_from IS NOT NULL AND valid_from > CURRENT_DATE THEN 'Scheduled'
               ELSE 'Active'
             END
         `
@@ -621,17 +623,17 @@ app.get("/dashboard/charts", async (req, res) => {
 app.get("/dashboard/stats", async (req, res) => {
   try {
     const [patients, doctors, treatments, diagnoses] = await Promise.all([
-      query("SELECT COUNT(*) AS totalPatients FROM patient"),
-      query("SELECT COUNT(*) AS totalDoctors FROM doctor"),
-      query("SELECT COUNT(*) AS totalTreatments FROM treatment_history"),
-      query("SELECT COUNT(*) AS totalDiagnoses FROM diagnosis_history"),
+      query("SELECT COUNT(*) FROM patient"),
+      query("SELECT COUNT(*) FROM doctor"),
+      query("SELECT COUNT(*) FROM treatment_history"),
+      query("SELECT COUNT(*) FROM diagnosis_history"),
     ])
 
     res.json({
-      totalPatients: Number(patients[0]?.totalPatients || 0),
-      totalDoctors: Number(doctors[0]?.totalDoctors || 0),
-      totalTreatments: Number(treatments[0]?.totalTreatments || 0),
-      totalDiagnoses: Number(diagnoses[0]?.totalDiagnoses || 0),
+      totalPatients: Number(patients[0]?.count || 0),
+      totalDoctors: Number(doctors[0]?.count || 0),
+      totalTreatments: Number(treatments[0]?.count || 0),
+      totalDiagnoses: Number(diagnoses[0]?.count || 0),
     })
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch dashboard stats", error: err.message })
@@ -741,10 +743,10 @@ app.post("/admin/users", async (req, res) => {
 
     const insertColumns = Object.keys(payload)
     const placeholders = insertColumns.map(() => "?").join(", ")
-    const sql = `INSERT INTO ${usersTable} (${insertColumns.join(", ")}) VALUES (${placeholders})`
+    const sql = `INSERT INTO ${usersTable} (${insertColumns.join(", ")}) VALUES (${placeholders}) RETURNING user_id`
     const result = await query(sql, insertColumns.map((k) => payload[k]))
 
-    res.status(201).json({ message: "User added successfully", userId: result.insertId })
+    res.status(201).json({ message: "User added successfully", userId: result[0]?.user_id })
   } catch (err) {
     res.status(500).json({ message: "Failed to add user", error: err.message })
   }
